@@ -6,7 +6,7 @@ from .enums import FaseEnum
 class StudentAnswer(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="answers")
     chave = models.ForeignKey(Key, on_delete=models.SET_NULL, null=True, blank=True)
-    answer_matrix = models.JSONField(null=True, blank=True)  
+    answer_matrix = models.JSONField(null=True, default=list)  
     answer_img_url = models.TextField()
     note = models.FloatField(null=True, blank=True)
     corrects = models.IntegerField(null=True, blank=True)

@@ -1,30 +1,94 @@
 import re
+import json
+import logging
 from api import row
 from api.services.gemini import Gemini
 from api.models import Student, StudentAnswer
 from api.services.cloduinary import CloudinaryConfig
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger("extract_data")   
 gemini = Gemini()
 
 def extract_data(text):
-    nome = re.search(r"(?i)Nome[:\s]*(.+)", text)
-    classe = re.search(r"(?i)Classe[:\s]*(.+)", text)
-    turma = re.search(r"(?i)Turma[:\s]*(.+)", text)
-    curso = re.search(r"(?i)Curso[:\s]*(\d+)", text)
 
-    if classe:
-        classe_val = classe.group(1).strip()
-        classe_num = re.sub(r"[^\d]", "", classe_val)
-        classe_formated = int(classe_num) if classe_num else "---"
-    else:
-        classe_formated = "---"
+    try:
+        logger.debug(f"Texto recebido para extração:\n{text}")
 
-    return {
-        "Nome": nome.group(1).strip() if nome else "---",
-        "Classe": classe_formated,
-        "Turma": turma.group(1).strip() if turma else "---",
-        "Curso": curso.group(1).strip() if curso else "N/A"
-    }
+        json_match = re.search(r'\{[\s\S]*\}', text)
+        if json_match:
+            json_str = json_match.group(0)
+            logger.debug(f"Tentando parsear JSON extraído:\n{json_str}")
+            try:
+                data = json.loads(json_str)
+                logger.debug(f"JSON extraído: {data}")
+                nome = data.get("Nome", "---")
+                turma = data.get("Turma", "---")
+                curso = data.get("Curso", "N/A")
+                classe = data.get("Classe", "---")
+                respostas = data.get("Respostas", {})
+                try:
+                    classe_formated = int(classe)
+                except:
+                    classe_formated = classe
+                return {
+                    "Nome": nome,
+                    "Turma": turma,
+                    "Curso": curso,
+                    "Classe": classe_formated,
+                    "Respostas": respostas
+                }
+            except Exception as e_json:
+                logger.error(f"Erro ao fazer parse do JSON: {e_json}")
+
+        nome = re.search(r"(?i)Nome[:\s]*([^\n\r]+)", text)
+        turma = re.search(r"(?i)Turma[:\s]*([^\n\r]+)", text)
+        curso = re.search(r"(?i)Curso[:\s]*([^\n\r]+)", text)
+        classe = re.search(r"(?i)Classe[:\s]*([^\n\r]+)", text)
+
+        logger.debug(f"Nome: {nome.group(1).strip() if nome else None}")
+        logger.debug(f"Turma: {turma.group(1).strip() if turma else None}")
+        logger.debug(f"Curso: {curso.group(1).strip() if curso else None}")
+        logger.debug(f"Classe: {classe.group(1).strip() if classe else None}")
+
+        if classe:
+            classe_val = classe.group(1).strip()
+            classe_num = re.sub(r"[^\d]", "", classe_val)
+            classe_formated = int(classe_num) if classe_num else "---"
+        else:
+            classe_formated = "---"
+
+        respostas = {}
+        questao_blocks = re.findall(r"(\d+)[\):.\-–]*([\s\S]*?)(?=(?:\n\d+[\):.\-–])|\Z)", text, re.IGNORECASE)
+        logger.debug(f"Blocos de questões encontrados: {questao_blocks}")
+        for questao_num, bloco in questao_blocks:
+            logger.debug(f"Questão {questao_num} bloco:\n{bloco}")
+            alternativa_marcada = re.search(r"([a-dA-D])\)\s*[xX]", bloco)
+            logger.debug(f"Alternativa marcada: {alternativa_marcada.group(1).upper() if alternativa_marcada else None}")
+            if alternativa_marcada:
+                respostas[questao_num] = alternativa_marcada.group(1).upper()
+
+        logger.debug(f"Respostas extraídas: {respostas}")
+
+        return {
+            "Nome": nome.group(1).strip() if nome else "---",
+            "Turma": turma.group(1).strip() if turma else "---",
+            "Curso": curso.group(1).strip() if curso else "N/A",
+            "Classe": classe_formated,
+            "Respostas": respostas
+        }
+
+    except Exception as e:
+        logger.error(f"Erro ao extrair dados: {str(e)}")
+        return {
+            "Nome": "---",
+            "Turma": "---",
+            "Curso": "N/A",
+            "Classe": "---",
+            "Respostas": {},
+            "Erro": f"Erro ao extrair dados: {str(e)}"
+        }
+
 
 def worker_answer(): 
     while True:
@@ -57,7 +121,8 @@ def worker_answer():
             StudentAnswer.objects.create(
                 student_id=student.id,
                 answer_img_url=cloudinary_url,
-                fase=fase
+                fase=fase,
+                answer_matrix=data.get("Respostas", {})
             )
 
             response_list.append({"message": "Dados salvos com sucesso!", "dados": data})
