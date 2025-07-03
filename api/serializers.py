@@ -6,10 +6,10 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'password']
 
-class StudentSerializer(serializers.ModelSerializer):
+class StudentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
-        fields = ['id', 'name', 'course']
+        fields = ['id', 'name']
 
 class KeySerializer(serializers.ModelSerializer):
     class Meta:

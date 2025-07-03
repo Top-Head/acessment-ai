@@ -5,7 +5,7 @@ class Student(models.Model):
     name = models.CharField(max_length=255)
     grade = models.IntegerField()
     turma = models.CharField(max_length=50)
-    course = models.CharField(max_length=255, default='N/A')
+    course = models.CharField(max_length=255, default='N/A', null=True)
     category = models.CharField(max_length=20, choices=CategoryEnum.choices)
 
     def save(self, *args, **kwargs):

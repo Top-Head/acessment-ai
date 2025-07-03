@@ -19,18 +19,33 @@ class Gemini:
 
             image_data = base64.b64encode(response.content).decode("utf-8")
 
-            user_prompt = """Extraia APENAS as seguintes informações da imagem:
-            - Nome do aluno
-            - Classe
-            - Turma
-            - Curso
+            user_prompt = """
+                        Extraia APENAS as seguintes informações da imagem:
 
-            **IMPORTANTE:** 
-            - Formato esperado:
-                Nome: [Nome do aluno]
-                Classe: [Classe do aluno]
-                Turma: [Turma do aluno]
-                Curso: [Curso do aluno]
+                        1. Nome do aluno
+                        2. Classe
+                        3. Turma
+                        4. Curso
+                        5. Respostas do aluno (número da questão e alternativa marcada)
+
+                        **IMPORTANTE:**
+                        - O formato de saída DEVE ser neste exato JSON:
+
+                        {
+                        "Nome": "[Nome do aluno]",
+                        "Classe": [Número da classe, ex: 13],
+                        "Turma": "[Letra da turma]",
+                        "Curso": "[Curso do aluno]",
+                        "Respostas": {
+                            "1": "A",
+                            "2": "D",
+                            ...
+                        }
+                        }
+
+                        - Nas respostas, a alternativa marcada é a que tem um "X" ou outro símbolo.
+                        - Apenas uma alternativa por questão.
+                        - Ignore questões não respondidas.
             """
 
             response = self.__model.generate_content([user_prompt, {"mime_type": "image/jpeg", "data": image_data}])
