@@ -6,4 +6,5 @@ urlpatterns = [
     path('api/login/', user_views.login, name='login'),
     path('api/get-me/', user_views.get_me, name='get_me'),
     path('api/upload-test/', provas_views.upload_images, name='upload_test_images'),
+    path('api/extract-pdf-text/', chave_views.ExtractPDFTextView.as_view(), name='extract_pdf_text'),
 ]

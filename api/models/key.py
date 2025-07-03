@@ -9,7 +9,7 @@ class Key(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     variant = models.CharField(max_length=10, choices=VariantEnum.choices)
     matrix = models.JSONField() 
-    classe = models.IntegerField()
+    classe = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.title
