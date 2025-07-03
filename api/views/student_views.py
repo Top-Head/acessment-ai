@@ -8,11 +8,14 @@ from rest_framework.decorators import api_view
 def update_student(request, student_id):
 
     try:
-        student = Student.objects.filter(id=student_id)
+        student = Student.objects.get(id=student_id)
     except Student.DoesNotExist as e:
         return Response({"error": f"This student not exist: {e}"}, status=status.HTTP_404_NOT_FOUND)
     
-    serializer = StudentSerializer(student)
+    serializer = StudentSerializer(student, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+    return Response(serializer.errors, status=status.HTTP_404_BAD_REQUEST)
 
