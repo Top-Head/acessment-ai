@@ -1,28 +1,23 @@
 import re
 import json
-import logging
 from api import row
 from api.services.gemini import Gemini
 from api.models import Student, StudentAnswer
 from api.services.cloduinary import CloudinaryConfig
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger("extract_data")   
+
 gemini = Gemini()
 
 def extract_data(text):
     try:
-        logger.debug(f"Texto recebido para extração:\n{text}")
 
         json_match = re.search(r'\{[\s\S]*\}', text)
 
         if json_match:
             json_str = json_match.group(0)
-            logger.debug(f"Tentando parsear JSON extraído:\n{json_str}")
 
             try:
                 data = json.loads(json_str)
-                logger.debug(f"JSON extraído: {data}")
 
                 nome = data.get("Nome", "---")
                 turma = data.get("Turma", "---")
@@ -30,22 +25,17 @@ def extract_data(text):
                 classe_raw = data.get("Classe", "---")
                 respostas = data.get("Respostas", {})
 
-                # Limpeza de strings
                 nome = re.sub(r'^["\':\s]*|["\':\s,]*$', '', str(nome))
                 turma = re.sub(r'^["\':\s]*|["\':\s,]*$', '', str(turma))
                 curso = re.sub(r'^["\':\s]*|["\':\s,]*$', '', str(curso))
 
-                # Formatação da classe
                 classe_num = re.sub(r"[^\d]", "", str(classe_raw))
                 classe_formated = int(classe_num) if classe_num else None
 
-                # Verifica se precisa extrair respostas manualmente
                 if not respostas:
                     respostas = {}
                     questao_blocks = re.findall(r"(\d+)[\):.\-–]*([\s\S]*?)(?=(?:\n\d+[\):.\-–])|\Z)", text, re.IGNORECASE)
-                    logger.debug(f"Blocos de questões encontrados: {questao_blocks}")
                     for questao_num, bloco in questao_blocks:
-                        logger.debug(f"Questão {questao_num} bloco:\n{bloco}")
                         alternativa_marcada = re.search(r"([a-dA-D])\)\s*[xX]", bloco)
                         if alternativa_marcada:
                             respostas[questao_num] = alternativa_marcada.group(1).upper()
@@ -59,7 +49,7 @@ def extract_data(text):
                 }
 
             except Exception as e_json:
-                logger.error(f"Erro ao fazer parse do JSON: {e_json}")
+                return Response({"error": f"{e_json}"})
 
         nome = re.search(r"(?i)Nome[:\s]*([^\n\r]+)", text)
         turma = re.search(r"(?i)Turma[:\s]*([^\n\r]+)", text)
@@ -84,9 +74,7 @@ def extract_data(text):
         
         respostas = {}
         questao_blocks = re.findall(r"(\d+)[\):.\-–]*([\s\S]*?)(?=(?:\n\d+[\):.\-–])|\Z)", text, re.IGNORECASE)
-        logger.debug(f"Blocos de questões encontrados: {questao_blocks}")
         for questao_num, bloco in questao_blocks:
-            logger.debug(f"Questão {questao_num} bloco:\n{bloco}")
             alternativa_marcada = re.search(r"([a-dA-D])\)\s*[xX]", bloco)
             if alternativa_marcada:
                 respostas[questao_num] = alternativa_marcada.group(1).upper()
@@ -100,7 +88,6 @@ def extract_data(text):
         }
 
     except Exception as e:
-        logger.error(f"Erro ao extrair dados: {str(e)}")
         return {
             "Nome": "---",
             "Turma": "---",
