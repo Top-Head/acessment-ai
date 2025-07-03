@@ -1,3 +1,4 @@
+import json
 from api.models import Student
 from rest_framework import status
 from rest_framework.response import Response
@@ -19,3 +20,8 @@ def update_student(request, student_id):
 
     return Response(serializer.errors, status=status.HTTP_404_BAD_REQUEST)
 
+@api_view(['GET'])
+def get_total_students(request):
+    student = Student.objects.all().count()
+
+    return Response({"total": student})
