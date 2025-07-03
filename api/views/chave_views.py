@@ -24,7 +24,6 @@ class ExtractPDFTextView(APIView):
         finally:
             default_storage.delete(file_path)
 
-        # Aqui chama a função que agora EXISTE na mesma classe
         respostas = self._extrair_respostas_com_x(texto)
 
         return Response({'respostas': respostas}, status=200)
@@ -37,12 +36,10 @@ class ExtractPDFTextView(APIView):
         for linha in linhas:
             linha = linha.strip()
 
-            # Detecta número da questão
             match_questao = re.match(r'^(\d+)\.', linha)
             if match_questao:
                 questao_atual = match_questao.group(1)
 
-            # Detecta opção com (x)
             match_opcao = re.match(r'^([a-e])\s*-\s*.+\(x\)', linha, re.IGNORECASE)
             if match_opcao and questao_atual:
                 letra = match_opcao.group(1).lower()
