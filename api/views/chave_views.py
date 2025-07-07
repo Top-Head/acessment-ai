@@ -1,49 +1,69 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from PyPDF2 import PdfReader
-from django.core.files.storage import default_storage
+import fitz
+import json
 import re
 
-class ExtractPDFTextView(APIView):
-    def post(self, request, *args, **kwargs):
-        pdf_file = request.FILES.get('file')
-        if not pdf_file:
-            return Response({'error': 'Nenhum PDF enviado.'}, status=400)
+from api.models import Key
+from ..services.gemini import GeminiKeyExtractor
+from api.models.enums import FaseEnum, CategoryEnum, VariantEnum
 
-        file_path = default_storage.save(pdf_file.name, pdf_file)
+def convert_pdf_page_to_image_bytes(pdf_file):
+    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+    image_bytes_list = []
+
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        pix = page.get_pixmap()
+        img_bytes = pix.tobytes("jpeg")
+        image_bytes_list.append(img_bytes)
+
+    return image_bytes_list
+
+
+class UploadGabaritoPDFView(APIView):
+    def post(self, request):
+        title = request.data.get("title")
+        pdf_file = request.FILES.get("pdf")
+
+        if not pdf_file:
+            return Response({"error": "Ficheiro PDF não enviado."}, status=400)
 
         try:
-            with default_storage.open(file_path, 'rb') as f:
-                reader = PdfReader(f)
-                texto = ""
-                for page in reader.pages:
-                    texto += page.extract_text() or ""
+            image_bytes = convert_pdf_page_to_image_bytes(pdf_file)
         except Exception as e:
-            return Response({'error': str(e)}, status=500)
-        finally:
-            default_storage.delete(file_path)
+            return Response({"error": f"Erro ao converter PDF: {str(e)}"}, status=500)
 
-        respostas = self._extrair_respostas_com_x(texto)
+        extractor = GeminiKeyExtractor()
+        result = extractor.extract(image_bytes)
+        print("Resposta bruta do Gemini:", result)
 
-        return Response({'respostas': respostas}, status=200)
+        # Extrair só o JSON
+        json_match = re.search(r'{.*}', result, re.DOTALL)
+        if not json_match:
+            return Response({"error": "Erro ao interpretar resposta do Gemini"}, status=500)
 
-    def _extrair_respostas_com_x(self, texto):
-        respostas = {}
-        questao_atual = None
+        try:
+            data = json.loads(json_match.group())
+        except Exception as e:
+            return Response({"error": f"Erro ao converter JSON: {str(e)}"}, status=500)
 
-        linhas = texto.splitlines()
-        for linha in linhas:
-            linha = linha.strip()
+        try:
+            key = Key.objects.create(
+                title=title,
+                key_url="N/A",
+                fase=request.data.get("fase", FaseEnum.F1.value),
+                category=request.data.get("category", CategoryEnum.PRIMARIO.value),
+                variant=request.data.get("variant", VariantEnum.A.value),
+                matrix=data.get("Respostas", {}),
+                classe=request.data.get("classe")
+            )
+        except Exception as e:
+            return Response({"error": f"Erro ao salvar chave: {str(e)}"}, status=500)
 
-            match_questao = re.match(r'^(\d+)\.', linha)
-            if match_questao:
-                questao_atual = match_questao.group(1)
-
-            match_opcao = re.match(r'^([a-e])\s*-\s*.+\(x\)', linha, re.IGNORECASE)
-            if match_opcao and questao_atual:
-                letra = match_opcao.group(1).lower()
-                respostas[questao_atual] = letra
-                questao_atual = None
-
-        return respostas
+        return Response({
+            "message": "Chave cadastrada com sucesso!",
+            "key_id": key.id,
+            "resumo": key.matrix
+        }, status=201)
