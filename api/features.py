@@ -1,8 +1,5 @@
 import re
 import json
-from api.models import Key
-from api.services.gemini import Gemini
-from rest_framework.response import Response
 
 def extract_data(text: str) -> dict:
     try:
@@ -82,12 +79,10 @@ def extract_data(text: str) -> dict:
         }
 
     except Exception as e:
-    
         return {
             "Nome": "---",
             "Turma": "---",
             "Curso": "N/A",
             "Classe": None,
             "Respostas": {},
-            "Erro": f"Erro ao extrair dados: {str(e)}"
-        }       
+            "Erro": f"Erro ao extrair dados: {str(e)}"}       
