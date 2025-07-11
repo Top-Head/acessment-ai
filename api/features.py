@@ -41,7 +41,7 @@ def extract_data(text: str) -> dict:
                 }
 
             except Exception as e_json:
-                print(e_json)
+                return {"error": f"{e_json}"}
 
         nome = re.search(r"(?i)Nome[:\s]*([^\n\r]+)", text)
         turma = re.search(r"(?i)Turma[:\s]*([^\n\r]+)", text)

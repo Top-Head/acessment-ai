@@ -2,7 +2,6 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from api.models import User, Student, Key, StudentAnswer
 
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -20,6 +19,7 @@ class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentAnswer
         fields = ['id', 'student', 'answer_img_url', 'note', 'fase']
+
 
 class StudentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
