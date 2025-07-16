@@ -2,13 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import fitz
-import json
-import re
 
 from api.models import Key
 from ..services.gemini import GeminiKeyExtractor
 from api.models.enums import FaseEnum, CategoryEnum, VariantEnum
 
+# Converte PDF para lista de imagens em bytes
 def convert_pdf_page_to_image_bytes(pdf_file):
     doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
     image_bytes_list = []
@@ -37,17 +36,11 @@ class UploadGabaritoPDFView(APIView):
 
         extractor = GeminiKeyExtractor()
         result = extractor.extract(image_bytes)
-        print("Resposta bruta do Gemini:", result)
 
-        # Extrair só o JSON
-        json_match = re.search(r'{.*}', result, re.DOTALL)
-        if not json_match:
-            return Response({"error": "Erro ao interpretar resposta do Gemini"}, status=500)
+        if "error" in result:
+            return Response({"error": result["error"]}, status=500)
 
-        try:
-            data = json.loads(json_match.group())
-        except Exception as e:
-            return Response({"error": f"Erro ao converter JSON: {str(e)}"}, status=500)
+        respostas = result.get("Respostas", {})
 
         try:
             key = Key.objects.create(
@@ -56,7 +49,7 @@ class UploadGabaritoPDFView(APIView):
                 fase=request.data.get("fase", FaseEnum.F1.value),
                 category=request.data.get("category", CategoryEnum.PRIMARIO.value),
                 variant=request.data.get("variant", VariantEnum.A.value),
-                matrix=data.get("Respostas", {}),
+                matrix=respostas,
                 classe=request.data.get("classe")
             )
         except Exception as e:
