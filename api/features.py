@@ -1,16 +1,8 @@
 import re
 import json
-from api import row
-from api.services.gemini import Gemini
-from api.models import Student, StudentAnswer
-from api.services.cloduinary import CloudinaryConfig
 
-
-gemini = Gemini()
-
-def extract_data(text):
+def extract_data(text: str) -> dict:
     try:
-
         json_match = re.search(r'\{[\s\S]*\}', text)
 
         if json_match:
@@ -49,13 +41,12 @@ def extract_data(text):
                 }
 
             except Exception as e_json:
-                return Response({"error": f"{e_json}"})
+                return {"error": f"{e_json}"}
 
         nome = re.search(r"(?i)Nome[:\s]*([^\n\r]+)", text)
         turma = re.search(r"(?i)Turma[:\s]*([^\n\r]+)", text)
         curso = re.search(r"(?i)Curso[:\s]*([^\n\r]+)", text)
         classe = re.search(r"(?i)Classe[:\s]*([^\n\r]+)", text)
-
         nome_val = nome.group(1).strip() if nome else "---"
         turma_val = turma.group(1).strip() if turma else "---"
         curso_val = curso.group(1).strip() if curso else "N/A"
@@ -71,7 +62,6 @@ def extract_data(text):
         else:
             classe_formated = None
 
-        
         respostas = {}
         questao_blocks = re.findall(r"(\d+)[\):.\-–]*([\s\S]*?)(?=(?:\n\d+[\):.\-–])|\Z)", text, re.IGNORECASE)
         for questao_num, bloco in questao_blocks:
@@ -94,45 +84,4 @@ def extract_data(text):
             "Curso": "N/A",
             "Classe": None,
             "Respostas": {},
-            "Erro": f"Erro ao extrair dados: {str(e)}"
-        }
-
-
-def worker_answer(): 
-    while True:
-        image, response_list, fase = row.get()
-
-        cloudinary_url = CloudinaryConfig.upload_to_cloudinary_student_answer(image)
-
-        if not cloudinary_url:
-            response_list.append({"error": "Erro ao fazer upload no Cloudinary"})
-            row.task_done()
-            continue
-
-        extracted_text = gemini.gemini_output(cloudinary_url)
-
-        if "Erro" in extracted_text:
-            response_list.append({"error": extracted_text})
-        else:
-            data = extract_data(extracted_text)
-
-            student = Student.objects.filter(name=data["Nome"], turma=data["Turma"], grade=data["Classe"]).first()
-
-            if not student:
-               student = Student.objects.create(
-                        name=data["Nome"],
-                        grade=data["Classe"],
-                        turma=data["Turma"],
-                        course=data["Curso"]
-                ) 
-
-            StudentAnswer.objects.create(
-                student_id=student.id,
-                answer_img_url=cloudinary_url,
-                fase=fase,
-                answer_matrix=data.get("Respostas", {})
-            )
-
-            response_list.append({"message": "Dados salvos com sucesso!", "dados": data})
-
-        row.task_done()
+            "Erro": f"Erro ao extrair dados: {str(e)}"}       

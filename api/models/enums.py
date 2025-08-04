@@ -12,3 +12,7 @@ class CategoryEnum(models.TextChoices):
 class VariantEnum(models.TextChoices):
     A = 'A', 'A'
     B = 'B', 'B'
+
+class StatusEnum(models.TextChoices):
+    REPROVADO = 'Reprovado', 'Reprovado'
+    APROVADO = 'Aprovado', 'Aprovado'
