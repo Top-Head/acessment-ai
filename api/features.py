@@ -47,7 +47,6 @@ def extract_data(text: str) -> dict:
         turma = re.search(r"(?i)Turma[:\s]*([^\n\r]+)", text)
         curso = re.search(r"(?i)Curso[:\s]*([^\n\r]+)", text)
         classe = re.search(r"(?i)Classe[:\s]*([^\n\r]+)", text)
-
         nome_val = nome.group(1).strip() if nome else "---"
         turma_val = turma.group(1).strip() if turma else "---"
         curso_val = curso.group(1).strip() if curso else "N/A"

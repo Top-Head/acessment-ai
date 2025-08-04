@@ -18,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentAnswer
-        fields = ['id', 'student', 'answer_img_url', 'note', 'fase']
+        fields = ['id', 'student', 'answer_img_url', 'note', 'fase', 'status']
 
 
 class StudentUpdateSerializer(serializers.ModelSerializer):
@@ -27,10 +27,10 @@ class StudentUpdateSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 class StudentSerializer(serializers.ModelSerializer):
-    test = AnswerSerializer(many=True, read_only=True)
+    answers = AnswerSerializer(many=True, read_only=True)
     class Meta:
         model = Student
-        fields = ['id', 'name', 'grade', 'turma', 'course', 'category', 'test']
+        fields = ['id', 'name', 'grade', 'turma', 'course', 'category', 'answers']
 
 class KeySerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,13 +1,13 @@
 openapi: 3.0.0
 info:
-  title: Acessment AI 
+  title: Acessment AI
   version: 1.0.0
   description: API para maior orientação no consumo do Acessment AI - que é um projeto que automatiza correção de prova no sistema americano.
-  
+
 servers:
   - url: https://01h2hfx8-8000.uks1.devtunnels.ms/api
     description: Servidor local de desenvolvimento
-  
+
 paths:
   /register:
     post:
@@ -15,7 +15,7 @@ paths:
       description: Endpoint para obter o formulário de registro.
       requestBody:
         required: true
-        content: 
+        content:
           application/json:
             schema:
               type: object
@@ -23,22 +23,22 @@ paths:
                 username:
                   type: string
                   example: omarscode
-                  
+
                 email:
                   type: string
                   format: email
                   example: omarscode@gmail.com
-                  
-                password: 
+
+                password:
                   type: string
                   format: password
                   example: Senha123
       responses:
-        '201':
+        "201":
           description: User registered with sucess!
-        '404':
+        "404":
           description: Bad Request
-  
+
   /login:
     post:
       summary: Autenticar usuário
@@ -62,7 +62,7 @@ paths:
                 - email
                 - password
       responses:
-        '200':
+        "200":
           description: Autenticado com sucesso
           content:
             application/json:
@@ -78,7 +78,7 @@ paths:
                   email:
                     type: string
                     example: usuario@exemplo.com
-        '400':
+        "400":
           description: Email ou senha não fornecidos
           content:
             application/json:
@@ -88,7 +88,7 @@ paths:
                   error:
                     type: string
                     example: Email and password required
-        '401':
+        "401":
           description: Credenciais inválidas
           content:
             application/json:
@@ -98,12 +98,12 @@ paths:
                   error:
                     type: string
                     example: Invalid credentials
-          
+
   /get-me:
     get:
       summary: Buscar as infos do usuario logado
       responses:
-        '200':
+        "200":
           description: Dados pegados com sucesso!
           content:
             application/json:
@@ -113,12 +113,12 @@ paths:
                   username:
                     type: string
                     example: omarscode
-                  
+
                   email:
                     type: string
                     format: email
                     example: omarscode@gmail.com
-                    
+
   /extract-pdf-text:
     post:
       summary: Endpoint para o envio da chave
@@ -140,9 +140,9 @@ paths:
                   type: string
                   format: binary
                   description: PDF ou Chave
-      
+
       responses:
-        '200':
+        "200":
           description: Texto extraído com sucesso
           content:
             application/json:
@@ -157,22 +157,22 @@ paths:
                         correta:
                           type: string
                           example: "c"
-                        valor: 
+                        valor:
                           type: number
                           example: 1.0
-                          
-                    example: 
-                      "1": 
-                        correta: "c" 
+
+                    example:
+                      "1":
+                        correta: "c"
                         valor: 1,
-                      "2": 
-                        correta: "d" 
+                      "2":
+                        correta: "d"
                         valor: 2.5,
-                      "3": 
-                        correta: "a" 
+                      "3":
+                        correta: "a"
                         valor: 2
-                      
-        '400':
+
+        "400":
           description: Nenhum PDF enviado
           content:
             application/json:
@@ -182,7 +182,7 @@ paths:
                   error:
                     type: string
                     example: Nenhum PDF enviado.
-        '500':
+        "500":
           description: Erro ao processar o arquivo
           content:
             application/json:
@@ -192,7 +192,6 @@ paths:
                   error:
                     type: string
                     example: "Falha ao ler o PDF: arquivo corrompido"
-                    
 
   /upload-test:
     post:
@@ -214,7 +213,7 @@ paths:
                 fase:
                   type: string
                   description: Nome da fase da prova
-                key_id:
+                key:
                   type: integer
                   description: ID da chave de correção usada para corrigir a prova
               required:
@@ -222,7 +221,7 @@ paths:
                 - fase
                 - key_id
       responses:
-        '201':
+        "201":
           description: Imagens processadas com sucesso
           content:
             application/json:
@@ -254,7 +253,7 @@ paths:
                           example:
                             "1": "a"
                             "2": "b"
-        '400':
+        "400":
           description: Erro no envio
           content:
             application/json:
@@ -264,7 +263,7 @@ paths:
                   error:
                     type: string
                     example: Campo 'fase' é obrigatório
-  
+
   /update-student/<int:student_id>:
     put:
       summary: Atualização de das infos dos alunos
@@ -277,9 +276,9 @@ paths:
               properties:
                 name:
                   type: string
-      
+
       responses:
-        '202':
+        "202":
           description: Aluno atualizado com sucesso
           content:
             application/json:
@@ -289,15 +288,15 @@ paths:
                   name:
                     type: string
                     example: Omar Rodrigues
-        
-        '404':
+
+        "404":
           description: Bad Request
-  
+
   /get-students:
     get:
       summary: Retornar todos os estudantes
       responses:
-        '200':
+        "200":
           description: Retorna todos os usuarios
           content:
             application/json:
@@ -322,19 +321,19 @@ paths:
                   test:
                     type: integer
                     example: 2
-          
+
   /get-total-students:
     get:
       summary: Retornar total de estudantes
       responses:
-        '200':
+        "200":
           description: Retornado com sucesso
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  total: 
+                  total:
                     type: integer
                     example: 20
 
@@ -342,7 +341,7 @@ paths:
     get:
       summary: Retornar total reprovados
       responses:
-        '200':
+        "200":
           description: Retornado sucesso
           content:
             application/json:
@@ -352,12 +351,12 @@ paths:
                   total:
                     type: integer
                     example: 20
-  
+
   /get-total-aprovados:
     get:
       summary: Retornar total aprovados
       responses:
-        '200':
+        "200":
           description: Retornado sucesso
           content:
             application/json:
@@ -367,4 +366,3 @@ paths:
                   total:
                     type: integer
                     example: 20
-                    
