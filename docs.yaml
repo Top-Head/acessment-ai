@@ -1,0 +1,368 @@
+openapi: 3.0.0
+info:
+  title: Acessment AI
+  version: 1.0.0
+  description: API para maior orientação no consumo do Acessment AI - que é um projeto que automatiza correção de prova no sistema americano.
+
+servers:
+  - url: https://01h2hfx8-8000.uks1.devtunnels.ms/api
+    description: Servidor local de desenvolvimento
+
+paths:
+  /register:
+    post:
+      summary: Exibe o formulário de registro
+      description: Endpoint para obter o formulário de registro.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: omarscode
+
+                email:
+                  type: string
+                  format: email
+                  example: omarscode@gmail.com
+
+                password:
+                  type: string
+                  format: password
+                  example: Senha123
+      responses:
+        "201":
+          description: User registered with sucess!
+        "404":
+          description: Bad Request
+
+  /login:
+    post:
+      summary: Autenticar usuário
+      description: Autentica um usuário usando email e senha e retorna tokens JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: usuario@exemplo.com
+                password:
+                  type: string
+                  format: password
+                  example: senha_segura123
+              required:
+                - email
+                - password
+      responses:
+        "200":
+          description: Autenticado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refresh:
+                    type: string
+                    example: eyJ0eXAiOiJKV1QiLCJhbGciOi...
+                  access:
+                    type: string
+                    example: eyJ0eXAiOiJKV1QiLCJhbGciOi...
+                  email:
+                    type: string
+                    example: usuario@exemplo.com
+        "400":
+          description: Email ou senha não fornecidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Email and password required
+        "401":
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid credentials
+
+  /get-me:
+    get:
+      summary: Buscar as infos do usuario logado
+      responses:
+        "200":
+          description: Dados pegados com sucesso!
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    example: omarscode
+
+                  email:
+                    type: string
+                    format: email
+                    example: omarscode@gmail.com
+
+  /extract-pdf-text:
+    post:
+      summary: Endpoint para o envio da chave
+      description: Colocar o PDF e extrair os dados da mesma
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: Prova de Matematica
+                fase:
+                  type: string
+                  example: Fase 1
+                file:
+                  type: string
+                  format: binary
+                  description: PDF ou Chave
+
+      responses:
+        "200":
+          description: Texto extraído com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  respostas:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        correta:
+                          type: string
+                          example: "c"
+                        valor:
+                          type: number
+                          example: 1.0
+
+                    example:
+                      "1":
+                        correta: "c"
+                        valor: 1,
+                      "2":
+                        correta: "d"
+                        valor: 2.5,
+                      "3":
+                        correta: "a"
+                        valor: 2
+
+        "400":
+          description: Nenhum PDF enviado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Nenhum PDF enviado.
+        "500":
+          description: Erro ao processar o arquivo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Falha ao ler o PDF: arquivo corrompido"
+
+  /upload-test:
+    post:
+      summary: Upload de imagens com respostas dos alunos
+      description: Faz o upload de múltiplas imagens contendo respostas dos alunos, processa via OCR+IA e salva no banco.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Lista de imagens para upload (campo repetido)
+                fase:
+                  type: string
+                  description: Nome da fase da prova
+                key:
+                  type: integer
+                  description: ID da chave de correção usada para corrigir a prova
+              required:
+                - image
+                - fase
+                - key_id
+      responses:
+        "201":
+          description: Imagens processadas com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: Dados salvos com sucesso!
+                    dados:
+                      type: object
+                      properties:
+                        Nome:
+                          type: string
+                          example: João
+                        Turma:
+                          type: string
+                          example: A
+                        Classe:
+                          type: string
+                          example: 7ª
+                        Curso:
+                          type: string
+                          example: Matemática
+                        Respostas:
+                          type: object
+                          example:
+                            "1": "a"
+                            "2": "b"
+        "400":
+          description: Erro no envio
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Campo 'fase' é obrigatório
+
+  /update-student/<int:student_id>:
+    put:
+      summary: Atualização de das infos dos alunos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+
+      responses:
+        "202":
+          description: Aluno atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: Omar Rodrigues
+
+        "404":
+          description: Bad Request
+
+  /get-students:
+    get:
+      summary: Retornar todos os estudantes
+      responses:
+        "200":
+          description: Retorna todos os usuarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: Omar Rodrigues
+                  grade:
+                    type: integer
+                    example: 11
+                  turma:
+                    type: string
+                    example: IB
+                  course:
+                    type: string
+                    example: Informática
+                  category:
+                    type: string
+                    example: Médio
+                  test:
+                    type: integer
+                    example: 2
+
+  /get-total-students:
+    get:
+      summary: Retornar total de estudantes
+      responses:
+        "200":
+          description: Retornado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    example: 20
+
+  /get-total-reprovados:
+    get:
+      summary: Retornar total reprovados
+      responses:
+        "200":
+          description: Retornado sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    example: 20
+
+  /get-total-aprovados:
+    get:
+      summary: Retornar total aprovados
+      responses:
+        "200":
+          description: Retornado sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    example: 20

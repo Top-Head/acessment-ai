@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Testar envio de PDF</title>
+</head>
+<body>
+  <h2>Enviar PDF para extrair texto</h2>
+   <form method="POST" action="http://127.0.0.1:8000/api/extract-pdf-text/" enctype="multipart/form-data">
+  <label for="title">Título da Chave:</label><br>
+  <input type="text" name="title" id="title" required><br><br>
+
+  <label for="pdf">Arquivo da Chave (PDF):</label><br>
+  <input type="file" name="pdf" id="pdf" accept=".pdf" required><br><br>
+
+  <button type="submit">Enviar Chave</button>
+</form>
+</body>
+</html>
