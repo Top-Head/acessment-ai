@@ -4,7 +4,7 @@ from rest_framework import status
 import fitz
 
 from api.models import Key
-from ..services.gemini import GeminiKeyExtractor
+from ..services.groq import GroqKeyExtractor
 from api.models.enums import FaseEnum, CategoryEnum, VariantEnum
 
 
@@ -33,7 +33,7 @@ class UploadGabaritoPDFView(APIView):
         except Exception as e:
             return Response({"error": f"Erro ao converter PDF: {str(e)}"}, status=500)
 
-        extractor = GeminiKeyExtractor()
+        extractor = GroqKeyExtractor()
         result = extractor.extract(image_bytes)
 
         if "error" in result:

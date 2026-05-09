@@ -2,4 +2,5 @@ venv
 **__pycache__
 .vscode
 .env
-*.pdf.env
+*.pdf
+generate_keys.py

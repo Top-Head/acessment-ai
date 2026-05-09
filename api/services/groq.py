@@ -1,20 +1,21 @@
-import json
 import os
 import base64
+import json
 import re
 import requests
 from dotenv import load_dotenv
-import google.generativeai as gemini
+from groq import Groq
 
 load_dotenv()
 
-gemini.configure(api_key=os.getenv('GOOGLE_API_KEY'))
 
-class Gemini:
+class Groq:
+    """Extrai dados do aluno a partir da imagem da folha de prova."""
+
     def __init__(self):
-        self.__model = gemini.GenerativeModel("gemini-1.5-flash")
+        self.__client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-    def gemini_output(self, image_url):
+    def groq_output(self, image_url):
         try:
             response = requests.get(image_url)
             if response.status_code != 200:
@@ -45,27 +46,49 @@ Extraia APENAS as seguintes informações da imagem:
   }
 }
 
-- Nas respostas, a alternativa marcada é a que tem um "X" ou outro símbolo.
+- Nas respostas, a alternativa marcada é a que tem um "X", bolinha, ponto ou outro símbolo.
 - Apenas uma alternativa por questão.
 - Ignore questões não respondidas.
+- Responde APENAS com o JSON, sem texto adicional.
 """
-            result = self.__model.generate_content([
-                user_prompt,
-                {"mime_type": "image/jpeg", "data": image_data}
-            ])
 
-            if not result or not result.text.strip():
-                return "Erro: Resposta vazia do Gemini"
+            response = self.__client.chat.completions.create(
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_data}"
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": user_prompt
+                            }
+                        ]
+                    }
+                ],
+                temperature=0
+            )
 
-            return result.text
+            result = response.choices[0].message.content
+            if not result or not result.strip():
+                return "Erro: Resposta vazia do Groq"
+
+            return result
 
         except Exception as e:
             return f"Erro ao processar a imagem: {e}"
 
-class GeminiKeyExtractor:
+
+class GroqKeyExtractor:
+    """Extrai a chave de correção (respostas correctas + cotações) a partir das imagens do gabarito."""
+
     def __init__(self):
-        gemini.configure(api_key=os.getenv('GOOGLE_API_KEY'))
-        self.__model = gemini.GenerativeModel("gemini-1.5-flash")
+        self.__client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
     def extract(self, image_bytes_list):
         try:
@@ -77,19 +100,18 @@ Sua tarefa é:
 - Para cada questão, identificar a alternativa marcada como CORRETA.
 - Quando possível, identificar a COTAÇÃO (valor da questão).
 
- Considere que:
+Considere que:
 - A alternativa correta pode estar marcada com "X", círculo, sublinhado, ou outra marcação visual.
 - As alternativas podem ser A, B, C, D, E — varie conforme o layout.
 - As questões podem estar em qualquer formato visual (colunas, linhas, numeração com parênteses, etc).
-- Cotações podem aparecer como: “Cotação: 2”, “(1 valor)”, “vale 2 pontos”, ou similares.
+- Cotações podem aparecer como: "Cotação: 2", "(1 valor)", "vale 2 pontos", ou similares.
 
- Importante:
+Importante:
 - Ignore questões sem marcação clara de resposta.
 - Se não encontrar cotação, não inclua o campo.
 - NUNCA invente respostas ou valores.
-- Formato de saída deve ser estritamente este:
+- Responde APENAS com o JSON abaixo, sem texto adicional, sem markdown:
 
-```json
 {
   "Respostas": {
     "1": {"resposta": "A", "cotacao": 2},
@@ -97,21 +119,33 @@ Sua tarefa é:
     "3": {"resposta": "E", "cotacao": 1}
   }
 }
-
 """
 
-            parts = [{"text": prompt}]
+            content = [{"type": "text", "text": prompt}]
+
             for img_bytes in image_bytes_list:
                 image_base64 = base64.b64encode(img_bytes).decode("utf-8")
-                parts.append({"mime_type": "image/jpeg", "data": image_base64})
+                content.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{image_base64}"
+                    }
+                })
 
-            response = self.__model.generate_content(parts)
-            result = response.text
+            response = self.__client.chat.completions.create(
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                messages=[
+                    {"role": "user", "content": content}
+                ],
+                temperature=0
+            )
 
-            # 🔎 Extrair JSON do texto
-            json_match = re.search(r'{.*}', result, re.DOTALL)
+            result = response.choices[0].message.content
+
+            # Extrair JSON do texto (caso venha com markdown ```json ... ```)
+            json_match = re.search(r'\{.*\}', result, re.DOTALL)
             if not json_match:
-                return {"error": "JSON não encontrado na resposta do Gemini."}
+                return {"error": "JSON não encontrado na resposta do Groq."}
 
             try:
                 data = json.loads(json_match.group())
@@ -122,15 +156,15 @@ Sua tarefa é:
             if not isinstance(respostas, dict):
                 return {"error": "'Respostas' não é um dicionário válido."}
 
-            # ✅ Validação e limpeza
+            # Validação e limpeza
             respostas_validas = {}
             for numero, conteudo in respostas.items():
                 letra = conteudo.get("resposta", "").upper()
                 cotacao = conteudo.get("cotacao", None)
 
-                if letra in ["A", "B", "C", "D"]:
+                if letra in ["A", "B", "C", "D", "E"]:
                     entrada = {"resposta": letra}
-                    if isinstance(cotacao, int):
+                    if isinstance(cotacao, (int, float)):
                         entrada["cotacao"] = cotacao
                     respostas_validas[str(numero)] = entrada
 

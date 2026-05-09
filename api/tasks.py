@@ -2,17 +2,17 @@
 from celery import shared_task
 from api.models import Student, Key, StudentAnswer
 from api.services.cloduinary import CloudinaryConfig
-from api.services.gemini import Gemini
+from api.services.groq import Groq
 from api.features import extract_data
 
 @shared_task
 def process_student_answer(image_data, fase, key_id):
-    gemini = Gemini()
+    groq = Groq()
     cloudinary_url = CloudinaryConfig.upload_to_cloudinary_student_answer(image_data)
     if not cloudinary_url:
         return {"error": "Erro ao fazer upload no Cloudinary"}
 
-    extracted_text = gemini.gemini_output(cloudinary_url)
+    extracted_text = groq.groq_output(cloudinary_url)
     if "Erro" in extracted_text:
         return {"error": extracted_text}
 
