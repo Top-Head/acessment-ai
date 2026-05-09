@@ -1,11 +1,12 @@
 from django.db import models
 from .enums import CategoryEnum
 
+
 class Student(models.Model):
     name = models.CharField(max_length=255)
     grade = models.IntegerField()
     turma = models.CharField(max_length=50)
-    course = models.CharField(max_length=255, default='N/A', null=True)
+    course = models.CharField(max_length=255, default="N/A", null=True)
     category = models.CharField(max_length=20, choices=CategoryEnum.choices)
 
     def save(self, *args, **kwargs):
@@ -23,4 +24,3 @@ class Student(models.Model):
 
     def __str__(self):
         return self.name
-

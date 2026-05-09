@@ -62,16 +62,13 @@ Extraia APENAS as seguintes informações da imagem:
                                 "type": "image_url",
                                 "image_url": {
                                     "url": f"data:image/jpeg;base64,{image_data}"
-                                }
+                                },
                             },
-                            {
-                                "type": "text",
-                                "text": user_prompt
-                            }
-                        ]
+                            {"type": "text", "text": user_prompt},
+                        ],
                     }
                 ],
-                temperature=0
+                temperature=0,
             )
 
             result = response.choices[0].message.content
@@ -85,7 +82,7 @@ Extraia APENAS as seguintes informações da imagem:
 
 
 class GroqKeyExtractor:
-    """Extrai a chave de correção (respostas correctas + cotações) a partir das imagens do gabarito."""
+    """Extrai a chave de correção (respostas correctas + cotações) a partir das imagens."""
 
     def __init__(self):
         self.__client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -125,25 +122,22 @@ Importante:
 
             for img_bytes in image_bytes_list:
                 image_base64 = base64.b64encode(img_bytes).decode("utf-8")
-                content.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{image_base64}"
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"},
                     }
-                })
+                )
 
             response = self.__client.chat.completions.create(
                 model="meta-llama/llama-4-scout-17b-16e-instruct",
-                messages=[
-                    {"role": "user", "content": content}
-                ],
-                temperature=0
+                messages=[{"role": "user", "content": content}],
+                temperature=0,
             )
 
             result = response.choices[0].message.content
 
-            # Extrair JSON do texto (caso venha com markdown ```json ... ```)
-            json_match = re.search(r'\{.*\}', result, re.DOTALL)
+            json_match = re.search(r"\{.*\}", result, re.DOTALL)
             if not json_match:
                 return {"error": "JSON não encontrado na resposta do Groq."}
 

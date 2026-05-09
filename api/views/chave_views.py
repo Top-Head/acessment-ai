@@ -20,6 +20,7 @@ def convert_pdf_page_to_image_bytes(pdf_file):
 
     return image_bytes_list
 
+
 class UploadGabaritoPDFView(APIView):
     def post(self, request):
         title = request.data.get("title")
@@ -57,13 +58,16 @@ class UploadGabaritoPDFView(APIView):
                 category=request.data.get("category", CategoryEnum.PRIMARIO.value),
                 variant=request.data.get("variant", VariantEnum.A.value),
                 matrix=respostas_formatadas,
-                classe=request.data.get("classe")
+                classe=request.data.get("classe"),
             )
         except Exception as e:
             return Response({"error": f"Erro ao salvar chave: {str(e)}"}, status=500)
 
-        return Response({
-            "message": "Chave cadastrada com sucesso!",
-            "key_id": key.id,
-            "resumo": key.matrix
-        }, status=201)
+        return Response(
+            {
+                "message": "Chave cadastrada com sucesso!",
+                "key_id": key.id,
+                "resumo": key.matrix,
+            },
+            status=201,
+        )

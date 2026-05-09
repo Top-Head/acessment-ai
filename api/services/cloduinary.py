@@ -5,6 +5,7 @@ from cloudinary import uploader
 
 load_dotenv()
 
+
 class CloudinaryConfig:
     cloudinary.config(
         cloud_name=os.getenv("CLOUD_NAME"),

@@ -7,38 +7,39 @@ from api.models import User, Student, Key, StudentAnswer
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password']
-        
+        fields = ["id", "username", "email", "password"]
 
-        extra_kwargs = {
-            'password': {'write_only': True}
-        }
+        extra_kwargs = {"password": {"write_only": True}}
 
     def create(self, validated_data):
-        validated_data['password'] = make_password(validated_data['password'])
+        validated_data["password"] = make_password(validated_data["password"])
         return super().create(validated_data)
+
 
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentAnswer
-        fields = ['id', 'student', 'answer_img_url', 'note', 'fase', 'status']
+        fields = ["id", "student", "answer_img_url", "note", "fase", "status"]
 
 
 class StudentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
-        fields = ['id', 'name']
+        fields = ["id", "name"]
+
 
 class StudentSerializer(serializers.ModelSerializer):
     answers = AnswerSerializer(many=True, read_only=True)
+
     class Meta:
         model = Student
-        fields = ['id', 'name', 'grade', 'turma', 'course', 'category', 'answers']
+        fields = ["id", "name", "grade", "turma", "course", "category", "answers"]
+
 
 class KeySerializer(serializers.ModelSerializer):
     class Meta:
         model = Key
-        fields = ['title', 'fase', 'category', 'variant', 'matrix', 'classe', 'key_url']
+        fields = ["title", "fase", "category", "variant", "matrix", "classe", "key_url"]
 
     def validate(self, data):
         # opcional: garantir que valor enviado está mesmo no Enum

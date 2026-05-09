@@ -3,7 +3,8 @@ from celery import shared_task
 from api.models import Student, Key, StudentAnswer
 from api.services.cloduinary import CloudinaryConfig
 from api.services.groq import Groq
-from api.features import extract_data
+from api.features import DataExtractor
+
 
 @shared_task
 def process_student_answer(image_data, fase, key_id):
@@ -16,15 +17,17 @@ def process_student_answer(image_data, fase, key_id):
     if "Erro" in extracted_text:
         return {"error": extracted_text}
 
-    data = extract_data(extracted_text)
+    data = DataExtractor.extract(extracted_text)
 
-    student = Student.objects.filter(name=data["Nome"], turma=data["Turma"], grade=data["Classe"]).first()
+    student = Student.objects.filter(
+        name=data["Nome"], turma=data["Turma"], grade=data["Classe"]
+    ).first()
     if not student:
         student = Student.objects.create(
             name=data["Nome"],
             grade=data["Classe"],
             turma=data["Turma"],
-            course=data["Curso"]
+            course=data["Curso"],
         )
 
     try:
@@ -67,7 +70,7 @@ def process_student_answer(image_data, fase, key_id):
             corrects=corrects,
             wrongs=wrongs,
             nulls=nulls,
-            fase=fase
+            fase=fase,
         )
         student_answer_obj.status = student_answer_obj.get_status_from_note()
         student_answer_obj.save()
@@ -82,7 +85,7 @@ def process_student_answer(image_data, fase, key_id):
             "corretas": corrects,
             "erradas": wrongs,
             "nulas": nulls,
-            "respostas": data.get('Respostas', {})
+            "respostas": data.get("Respostas", {}),
         }
     except Exception as e:
         return {"error": f"Erro ao salvar StudentAnswer: {str(e)}"}
