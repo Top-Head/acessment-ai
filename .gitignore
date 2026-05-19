@@ -4,3 +4,4 @@ venv
 .env
 *.pdf
 generate_keys.py
+system-architecture.md

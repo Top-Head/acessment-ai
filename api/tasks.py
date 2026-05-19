@@ -1,4 +1,3 @@
-# api/tasks.py
 from celery import shared_task
 from api.models import Student, Key, StudentAnswer
 from api.services.cloduinary import CloudinaryConfig
