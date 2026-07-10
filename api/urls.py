@@ -6,7 +6,7 @@ urlpatterns = [
     path("api/login", user_views.login, name="login"),
     path("api/get-me", user_views.get_me, name="get_me"),
     path(
-        "api/extract-pdf-text/",
+        "api/extract-pdf-text",
         chave_views.UploadGabaritoPDFView.as_view(),
         name="extract_pdf_text",
     ),
