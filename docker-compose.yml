@@ -1,12 +1,14 @@
 services:
-  web:
-    build: .
+  db:
+    image: postgres:16-alpine
     ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    depends_on:
-      - redis
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-defaultdb}
+      POSTGRES_USER: ${DB_USER:-avnadmin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-avnadmin}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
     restart: unless-stopped
 
   redis:
@@ -18,5 +20,43 @@ services:
     command: redis-server --appendonly yes
     restart: unless-stopped
 
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  celery_worker:
+    build: .
+    command: celery -A acessmentAi worker -l info
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      web:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
+  pg_data:
   redis_data:

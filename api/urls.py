@@ -26,4 +26,9 @@ urlpatterns = [
         "api/get-total-reprovados", student_views.get_reprovados, name="get_reprovados"
     ),
     path("api/get-total-aprovados", student_views.get_aprovados, name="get_aprovados"),
+    path(
+        "api/exam-results",
+        student_views.get_student_exam_results,
+        name="get_student_exam_results",
+    ),
 ]
