@@ -4,7 +4,7 @@ import json
 import re
 import requests
 from dotenv import load_dotenv
-from groq import Groq
+from groq import Groq as GroqClient
 
 load_dotenv()
 
@@ -13,7 +13,7 @@ class Groq:
     """Extrai dados do aluno a partir da imagem da folha de prova."""
 
     def __init__(self):
-        self.__client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        self.__client = GroqClient(api_key=os.getenv("GROQ_API_KEY"))
 
     def groq_output(self, image_url):
         try:
@@ -85,7 +85,7 @@ class GroqKeyExtractor:
     """Extrai a chave de correção (respostas correctas + cotações) a partir das imagens."""
 
     def __init__(self):
-        self.__client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        self.__client = GroqClient(api_key=os.getenv("GROQ_API_KEY"))
 
     def extract(self, image_bytes_list):
         try:
